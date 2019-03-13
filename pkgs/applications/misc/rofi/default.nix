@@ -1,14 +1,15 @@
 { stdenv, fetchurl, autoreconfHook, pkgconfig, libxkbcommon, pango, which, git
-, cairo, glib, libxcb, xcbutil, xcbutilwm, xcbutilxrm, libstartup_notification
+, cairo, libxcb, xcbutil, xcbutilwm, xcbutilxrm, libstartup_notification
+, bison, flex, librsvg, check
 }:
 
 stdenv.mkDerivation rec {
-  version = "1.3.0";
-  name = "rofi-${version}";
+  version = "1.5.2";
+  name = "rofi-unwrapped-${version}";
 
   src = fetchurl {
-    url = "https://github.com/DaveDavenport/rofi/releases/download/${version}/${name}.tar.xz";
-    sha256 = "1a65ai93ygras5bi7wc0s5i3zqslzqlnw3klq3sdnp2p0d6hjjqn";
+    url = "https://github.com/DaveDavenport/rofi/releases/download/${version}/rofi-${version}.tar.gz";
+    sha256 = "1rczxz6l32vnclarzga1sm1d5iq9rfscb9j7f8ih185n59hf0517";
   };
 
   preConfigure = ''
@@ -17,16 +18,17 @@ stdenv.mkDerivation rec {
     sed -i 's/~root/~nobody/g' test/helper-expand.c
   '';
 
-  buildInputs = [ autoreconfHook pkgconfig libxkbcommon pango cairo git
+  nativeBuildInputs = [ autoreconfHook pkgconfig ];
+  buildInputs = [ libxkbcommon pango cairo git bison flex librsvg check
     libstartup_notification libxcb xcbutil xcbutilwm xcbutilxrm which
   ];
-  doCheck = true;
+  doCheck = false;
 
   meta = with stdenv.lib; {
     description = "Window switcher, run dialog and dmenu replacement";
     homepage = https://davedavenport.github.io/rofi;
     license = licenses.mit;
-    maintainers = with maintainers; [ mbakke garbas ];
-    platforms = with platforms; unix;
+    maintainers = with maintainers; [ mbakke garbas ma27 ];
+    platforms = with platforms; linux;
   };
 }

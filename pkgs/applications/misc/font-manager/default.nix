@@ -1,51 +1,53 @@
-{ stdenv, fetchFromGitHub, makeWrapper, automake, autoconf, libtool,
-  pkgconfig, file, intltool, libxml2, json_glib , sqlite, itstool,
-  librsvg, vala_0_34, gnome3, wrapGAppsHook
+{ stdenv, fetchFromGitHub, meson, ninja, gettext, python3,
+  pkgconfig, libxml2, json-glib , sqlite, itstool, librsvg,
+  vala, gnome3, desktop-file-utils, wrapGAppsHook, gobject-introspection
 }:
 
 stdenv.mkDerivation rec {
-  name = "font-manager-${version}";
-  version = "0.7.3";
+  pname = "font-manager";
+  version = "0.7.4.2";
 
   src = fetchFromGitHub {
-    owner  = "FontManager";
-    repo   = "master";
-    rev    = version;
-    sha256 = "0qwi1mn2sc2q5cs28rga8i3cn34ylybs949vjnh97dl2rvlc0x06";
-    };
+    owner = "FontManager";
+    repo = "master";
+    rev = version;
+    sha256 = "15814czap0qg2h9nkcn9fg4i4xxa1lgw1vi6h3hi242qfwc7fh3i";
+  };
 
   nativeBuildInputs = [
-    makeWrapper
     pkgconfig
-    automake autoconf libtool
-    file
-    intltool
-    vala_0_34
-    gnome3.yelp_tools
+    meson
+    ninja
+    gettext
+    python3
+    itstool
+    desktop-file-utils
+    vala
+    gnome3.yelp-tools
     wrapGAppsHook
+    # For setup hook
+    gobject-introspection
   ];
 
   buildInputs = [
     libxml2
-    json_glib
+    json-glib
     sqlite
-    itstool
     librsvg
     gnome3.gtk
-    gnome3.gucharmap
-    gnome3.libgee
-    gnome3.file-roller
-    gnome3.defaultIconTheme
+    gnome3.adwaita-icon-theme
   ];
 
-  enableParallelBuilding = true;
+  patches = [ ./correct-post-install.patch ];
 
-  preConfigure = ''
-    NOCONFIGURE=true ./autogen.sh
-    substituteInPlace configure --replace "/usr/bin/file" "${file}/bin/file"
+  mesonFlags = [
+    "-Ddisable_pycompile=true"
+  ];
+
+  postPatch = ''
+    chmod +x meson_post_install.py
+    patchShebangs meson_post_install.py
   '';
-
-  configureFlags = "--disable-pycompile";
 
   meta = {
     homepage = https://fontmanager.github.io/;

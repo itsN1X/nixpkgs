@@ -1,42 +1,56 @@
-{ stdenv, lib, fetchFromGitHub
-, go, libapparmor, apparmor-parser, libseccomp }:
+{ stdenv, lib, fetchFromGitHub, buildGoPackage, btrfs-progs, go-md2man, utillinux }:
 
 with lib;
 
-stdenv.mkDerivation rec {
+buildGoPackage rec {
   name = "containerd-${version}";
-  version = "0.2.3";
+  version = "1.2.4";
 
   src = fetchFromGitHub {
-    owner = "docker";
+    owner = "containerd";
     repo = "containerd";
     rev = "v${version}";
-    sha256 = "0hlvbd5n4v337ywkc8mnbhp9m8lg8612krv45262n87c2ijyx09s";
+    sha256 = "1rw7f0y3iv0mapxid1rgpns80dcy8nhgmxmw27x8qzrzic5viivy";
   };
 
-  buildInputs = [ go ];
+  goPackagePath = "github.com/containerd/containerd";
+  outputs = [ "bin" "out" "man" ];
 
-  preBuild = ''
-    ln -s $(pwd) vendor/src/github.com/docker/containerd
+  hardeningDisable = [ "fortify" ];
+
+  buildInputs = [ btrfs-progs go-md2man utillinux ];
+  buildFlags = "VERSION=v${version}";
+
+  BUILDTAGS = []
+    ++ optional (btrfs-progs == null) "no_btrfs";
+
+  buildPhase = ''
+    cd go/src/${goPackagePath}
+    patchShebangs .
+    make binaries
   '';
 
   installPhase = ''
-    mkdir -p $out/bin
-    cp bin/* $out/bin
-  '';
+    for b in bin/*; do
+      install -Dm555 $b $bin/$b
+    done
 
-  preFixup = ''
-    # remove references to go compiler
-    while read file; do
-      sed -ri "s,${go},$(echo "${go}" | sed "s,$NIX_STORE/[^-]*,$NIX_STORE/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,"),g" $file
-    done < <(find $out/bin -type f 2>/dev/null)
+    make man
+    manRoot="$man/share/man"
+    mkdir -p "$manRoot"
+    for manFile in man/*; do
+      manName="$(basename "$manFile")" # "docker-build.1"
+      number="$(echo $manName | rev | cut -d'.' -f1 | rev)"
+      mkdir -p "$manRoot/man$number"
+      gzip -c "$manFile" > "$manRoot/man$number/$manName.gz"
+    done
   '';
 
   meta = {
-    homepage = https://containerd.tools/;
+    homepage = https://containerd.io/;
     description = "A daemon to control runC";
     license = licenses.asl20;
-    maintainers = with maintainers; [ offline ];
+    maintainers = with maintainers; [ offline vdemeester ];
     platforms = platforms.linux;
   };
 }

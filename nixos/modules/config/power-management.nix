@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, ... }:
 
 with lib;
 
@@ -68,9 +68,6 @@ in
   ###### implementation
 
   config = mkIf cfg.enable {
-
-    # FIXME: Implement powersave governor for sandy bridge or later Intel CPUs
-    powerManagement.cpuFreqGovernor = mkDefault "ondemand";
 
     systemd.targets.post-resume = {
       description = "Post-Resume Actions";

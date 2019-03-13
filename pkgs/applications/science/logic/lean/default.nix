@@ -1,17 +1,18 @@
-{ stdenv, fetchFromGitHub, cmake, gmp, mpfr, gperftools }:
+{ stdenv, fetchFromGitHub, cmake, gmp }:
 
 stdenv.mkDerivation rec {
   name = "lean-${version}";
-  version = "2016-12-30";
+  version = "3.4.2";
 
   src = fetchFromGitHub {
     owner  = "leanprover";
     repo   = "lean";
-    rev    = "fd4fffea27c442b12a45f664a8680ebb47482ca3";
-    sha256 = "1izbjxbr1nvv5kv2b7qklqjx2b1qmwrxhmvk0f2lrl9pxz9h0bmd";
+    rev    = "v${version}";
+    sha256 = "0zpnfg6kyg120rrdr336i1lymmzz4xgcqpn96iavhzhlaanmx55l";
   };
 
-  buildInputs = [ gmp mpfr cmake gperftools ];
+  nativeBuildInputs = [ cmake ];
+  buildInputs = [ gmp ];
   enableParallelBuilding = true;
 
   preConfigure = ''
@@ -20,7 +21,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "Automatic and interactive theorem prover";
-    homepage    = "http://leanprover.github.io";
+    homepage    = https://leanprover.github.io/;
     license     = licenses.asl20;
     platforms   = platforms.unix;
     maintainers = with maintainers; [ thoughtpolice gebner ];

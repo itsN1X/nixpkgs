@@ -1,59 +1,31 @@
-{ stdenv, fetchurl, libmnl, kernel ? null }:
+{ stdenv, kernel, wireguard-tools, perl }:
 
-# module requires Linux >= 4.1 https://www.wireguard.io/install/#kernel-requirements
-assert kernel != null -> stdenv.lib.versionAtLeast kernel.version "4.1";
+# module requires Linux >= 3.10 https://www.wireguard.io/install/#kernel-requirements
+assert stdenv.lib.versionAtLeast kernel.version "3.10";
 
-let
+stdenv.mkDerivation rec {
   name = "wireguard-${version}";
+  inherit (wireguard-tools) src version;
 
-  version = "0.0.20161223";
+  preConfigure = ''
+    cd src
+    sed -i '/depmod/,+1d' Makefile
+  '';
 
-  src = fetchurl {
-    url    = "https://git.zx2c4.com/WireGuard/snapshot/WireGuard-${version}.tar.xz";
-    sha256 = "0wmrsap34nd1x4gvz80isgsjjxbplvkrxnw56qlaqxkycvv8zndv";
-  };
+  hardeningDisable = [ "pic" ];
+
+  KERNELDIR = "${kernel.dev}/lib/modules/${kernel.modDirVersion}/build";
+  INSTALL_MOD_PATH = "\${out}";
+
+  NIX_CFLAGS = ["-Wno-error=cpp"];
+
+  nativeBuildInputs = [ perl ] ++ kernel.moduleBuildDependencies;
+
+  buildPhase = "make module";
 
   meta = with stdenv.lib; {
-    homepage     = https://www.wireguard.io/;
-    downloadPage = https://git.zx2c4.com/WireGuard/refs/;
-    description  = "Fast, modern, secure VPN tunnel";
-    maintainers  = with maintainers; [ ericsagnes ];
-    license      = licenses.gpl2;
-    platforms    = platforms.linux;
+    inherit (wireguard-tools.meta) homepage license maintainers;
+    description = "Kernel module for the WireGuard secure network tunnel";
+    platforms = platforms.linux;
   };
-
-  module = stdenv.mkDerivation {
-    inherit src meta name;
-
-    preConfigure = ''
-      cd src
-      sed -i '/depmod/,+1d' Makefile
-    '';
-
-    hardeningDisable = [ "pic" ];
-
-    KERNELDIR = "${kernel.dev}/lib/modules/${kernel.modDirVersion}/build";
-    INSTALL_MOD_PATH = "\${out}";
-
-    buildPhase = "make module";
-  };
-
-  tools = stdenv.mkDerivation {
-    inherit src meta name;
-
-    preConfigure = "cd src";
-
-    buildInputs = [ libmnl ];
-
-    makeFlags = [
-      "DESTDIR=$(out)"
-      "PREFIX=/"
-      "-C" "tools"
-    ];
-
-    buildPhase = "make tools";
-  };
-
-in if kernel == null
-   then tools
-   else module
+}

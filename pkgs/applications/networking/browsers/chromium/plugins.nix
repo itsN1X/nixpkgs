@@ -1,6 +1,10 @@
-{ stdenv
+{ stdenv, gcc
 , jshon
+, glib
+, nspr
+, nss
 , fetchzip
+, patchelfUnstable
 , enablePepperFlash ? false
 , enableWideVine ? false
 
@@ -45,6 +49,8 @@ let
 
     src = upstream-info.binary;
 
+    nativeBuildInputs = [ patchelfUnstable ];
+
     phases = [ "unpackPhase" "patchPhase" "installPhase" "checkPhase" ];
 
     unpackCmd = let
@@ -63,14 +69,12 @@ let
       ! find -iname '*.so' -exec ldd {} + | grep 'not found'
     '';
 
-    patchPhase = ''
-      for sofile in libwidevinecdm.so libwidevinecdmadapter.so; do
-        chmod +x "$sofile"
-        patchelf --set-rpath "${mkrpath [ stdenv.cc.cc ]}" "$sofile"
-      done
+    PATCH_RPATH = mkrpath [ gcc.cc glib nspr nss ];
 
-      patchelf --set-rpath "$out/lib:${mkrpath [ stdenv.cc.cc ]}" \
-        libwidevinecdmadapter.so
+    patchPhase = ''
+      chmod +x libwidevinecdm.so libwidevinecdmadapter.so
+      patchelf --set-rpath "$PATCH_RPATH" libwidevinecdm.so
+      patchelf --set-rpath "$out/lib:$PATCH_RPATH" libwidevinecdmadapter.so
     '';
 
     installPhase = let
@@ -90,22 +94,23 @@ let
         envVars.NIX_CHROMIUM_PLUGIN_PATH_WIDEVINE = "@out@/lib";
       }}
     '';
+    
+    meta.platforms = platforms.x86_64;
   };
 
   flash = stdenv.mkDerivation rec {
     name = "flashplayer-ppapi-${version}";
-    version = "24.0.0.186";
+    version = "32.0.0.142";
 
     src = fetchzip {
-      url = "https://fpdownload.adobe.com/pub/flashplayer/pdc/"
-          + "${version}/flash_player_ppapi_linux.x86_64.tar.gz";
-      sha256 = "1pwayhnfjvb6gal5msw0k8rv4h6jvl0mpfsi0jqlka00cnyfjqpd";
+      url = "https://fpdownload.adobe.com/pub/flashplayer/pdc/${version}/flash_player_ppapi_linux.x86_64.tar.gz";
+      sha256 = "1mifgrfcvz1mc5w9s0df498z2dma50yq3vqw3pz82wxynmk28gq9";
       stripRoot = false;
     };
 
     patchPhase = ''
       chmod +x libpepflashplayer.so
-      patchelf --set-rpath "${mkrpath [ stdenv.cc.cc ]}" libpepflashplayer.so
+      patchelf --set-rpath "${mkrpath [ gcc.cc ]}" libpepflashplayer.so
     '';
 
     doCheck = true;
@@ -130,6 +135,8 @@ let
     '';
 
     dontStrip = true;
+    
+    meta.platforms = platforms.x86_64;
   };
 
 in {

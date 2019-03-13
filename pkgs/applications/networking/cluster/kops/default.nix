@@ -1,31 +1,45 @@
-{ stdenv, lib, buildGoPackage, fetchFromGitHub, go-bindata  }:
+
+{ stdenv, buildGoPackage, fetchFromGitHub, go-bindata }:
 
 buildGoPackage rec {
   name = "kops-${version}";
-  version = "1.4.0";
-  rev = "v${version}";
+  version = "1.11.0";
 
   goPackagePath = "k8s.io/kops";
 
   src = fetchFromGitHub {
-    inherit rev;
+    rev = version;
     owner = "kubernetes";
     repo = "kops";
-    sha256 = "1jwgn7l8c639j5annwymqjdw5mcajwn58y21042jy5lhgdh8pdf5";
+    sha256 = "1z67jl66g79q6v5kjy9qxx2xp656ybv5hrc10h3wmzy0b0n30s4n";
   };
 
   buildInputs = [go-bindata];
   subPackages = ["cmd/kops"];
+
+  buildFlagsArray = ''
+    -ldflags=
+        -X k8s.io/kops.Version=${version}
+        -X k8s.io/kops.GitVersion=${version}
+  '';
 
   preBuild = ''
     (cd go/src/k8s.io/kops
      go-bindata -o upup/models/bindata.go -pkg models -prefix upup/models/ upup/models/...)
   '';
 
+  postInstall = ''
+    mkdir -p $bin/share/bash-completion/completions
+    mkdir -p $bin/share/zsh/site-functions
+    $bin/bin/kops completion bash > $bin/share/bash-completion/completions/kops
+    $bin/bin/kops completion zsh > $bin/share/zsh/site-functions/_kops
+  '';
+
   meta = with stdenv.lib; {
     description = "Easiest way to get a production Kubernetes up and running";
     homepage = https://github.com/kubernetes/kops;
     license = licenses.asl20;
-    maintainers = with maintainers; [offline];
+    maintainers = with maintainers; [offline zimbatm];
+    platforms = platforms.unix;
   };
 }

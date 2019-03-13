@@ -2,24 +2,19 @@
 
 stdenv.mkDerivation rec {
   name = "git-remote-gcrypt-${version}";
-  version = "1.0.0";
+  version = "1.2";
   rev = version;
 
   src = fetchFromGitHub {
     inherit rev;
     owner = "spwhitton";
     repo = "git-remote-gcrypt";
-    sha256 = "0c8ig1pdqj7wjwldnf62pmm2x29ri62x6b24mbsl2nxzkqbwh379";
+    sha256 = "0isfg0vlmcphxzj4jm32dycprhym26ina1b28jgc4j57kiqqrdcy";
   };
 
   outputs = [ "out" "man" ];
 
-  buildInputs = [ docutils makeWrapper ];
-
-  # The install.sh script expects rst2man, but here it's named rst2man.py
-  patchPhase = ''
-    sed -i 's/rst2man/rst2man.py/g' install.sh
-  '';
+  nativeBuildInputs = [ docutils makeWrapper ];
 
   installPhase = ''
     prefix="$out" ./install.sh

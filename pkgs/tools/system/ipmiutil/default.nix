@@ -2,12 +2,12 @@
 
 stdenv.mkDerivation rec {
   baseName = "ipmiutil";
-  version = "3.0.0";
+  version = "3.1.3";
   name = "${baseName}-${version}";
 
   src = fetchurl {
     url = "mirror://sourceforge/project/${baseName}/${name}.tar.gz";
-    sha256 = "0r986mvh6q1f7369qry2vq4rqc6kc4kq957s2g5qsl8m1pyw2mvx";
+    sha256 = "0mxydn6pwdhky659rz6k1jlh95hy43pmz4nx53kligjwy2v060xq";
   };
 
   buildInputs = [ openssl ];
@@ -26,7 +26,7 @@ stdenv.mkDerivation rec {
     maintainers = with maintainers; [ raskin ];
     platforms = platforms.linux;
     license = licenses.bsd3;
-    downloadPage = "http://sourceforge.net/projects/ipmiutil/files/ipmiutil/";
+    downloadPage = "https://sourceforge.net/projects/ipmiutil/files/ipmiutil/";
     inherit version;
   };
 }

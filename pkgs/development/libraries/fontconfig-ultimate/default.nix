@@ -11,8 +11,6 @@ stdenv.mkDerivation {
     owner = "bohoomil";
   };
 
-  phases = "$prePhases unpackPhase installPhase $postPhases";
-
   installPhase = ''
     mkdir -p $out/etc/fonts/conf.d
     cp conf.d.infinality/*.conf $out/etc/fonts/conf.d
@@ -40,4 +38,11 @@ stdenv.mkDerivation {
     cp fontconfig_patches/free/*.conf $out/etc/fonts/presets/free
     cp fontconfig_patches/ms/*.conf $out/etc/fonts/presets/ms
   '';
+
+  meta = with stdenv.lib; {
+    description = "Font configuration files, patches, scripts and source packages (Infinality & friends)";
+    homepage = https://github.com/bohoomil/fontconfig-ultimate;
+    license = licenses.mit;
+    platforms = platforms.all;
+  };
 }

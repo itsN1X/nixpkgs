@@ -1,8 +1,7 @@
 { stdenv, fetchgit, python2Packages }:
 
 python2Packages.buildPythonApplication rec {
-  name = "lastwatch-${version}";
-  namePrefix = "";
+  pname = "lastwatch";
   version = "0.4.1";
 
   src = fetchgit {
@@ -18,7 +17,7 @@ python2Packages.buildPythonApplication rec {
   ];
 
   meta = {
-    homepage = "https://github.com/aszlig/LastWatch";
+    homepage = https://github.com/aszlig/LastWatch;
     description = "An inotify-based last.fm audio scrobbler";
     license = stdenv.lib.licenses.gpl2;
     platforms = stdenv.lib.platforms.linux;

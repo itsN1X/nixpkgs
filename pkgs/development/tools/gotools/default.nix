@@ -1,9 +1,9 @@
-{ stdenv, lib, go, buildGoPackage, fetchgit, fetchhg, fetchbzr, fetchsvn }:
+{ stdenv, go, buildGoPackage, fetchgit }:
 
 buildGoPackage rec {
-  name = "gotools-${version}";
-  version = "20160519-${stdenv.lib.strings.substring 0 7 rev}";
-  rev = "9ae4729fba20b3533d829a9c6ba8195b068f2abc";
+  name = "gotools-unstable-${version}";
+  version = "2019-02-11";
+  rev = "44bee7e801e4a70b5fc9a91ff23830ab4df55d5e";
 
   goPackagePath = "golang.org/x/tools";
   goPackageAliases = [ "code.google.com/p/go.tools" ];
@@ -11,7 +11,7 @@ buildGoPackage rec {
   src = fetchgit {
     inherit rev;
     url = "https://go.googlesource.com/tools";
-    sha256 = "1j51aaskfqc953p5s9naqimr04hzfijm4yczdsiway1xnnvvpfr1";
+    sha256 = "1y0k6a6vphd01l2mzdm14aqax4qyslgcbyzl6zkbilj55hfp97y4";
   };
 
   goDeps = ./deps.nix;

@@ -1,35 +1,39 @@
-{ stdenv, lib, fetchFromGitHub, go-md2man
-, go, pkgconfig, libapparmor, apparmor-parser, libseccomp }:
+{ stdenv, lib, fetchFromGitHub, buildGoPackage, go-md2man
+, pkgconfig, libapparmor, apparmor-parser, libseccomp, which }:
 
 with lib;
 
-stdenv.mkDerivation rec {
+buildGoPackage rec {
   name = "runc-${version}";
-  version = "2016-06-15";
+  version = "1.0.0-rc6";
 
   src = fetchFromGitHub {
     owner = "opencontainers";
     repo = "runc";
-    rev = "cc29e3dded8e27ba8f65738f40d251c885030a28";
-    sha256 = "18fwb3kq10zhhx184yn3j396gpbppy3y4ypb8m2b2pdms39s6pyx";
+    rev = "v${version}";
+    sha256 = "1jwacb8xnmx5fr86gximhbl9dlbdwj3rpf27hav9q1si86w5pb1j";
   };
 
-  outputs = [ "out" "man" ];
+  goPackagePath = "github.com/opencontainers/runc";
+  outputs = [ "bin" "out" "man" ];
 
   hardeningDisable = ["fortify"];
 
-  buildInputs = [ go-md2man go pkgconfig libseccomp libapparmor apparmor-parser ];
+  nativeBuildInputs = [ pkgconfig ];
+  buildInputs = [ go-md2man libseccomp libapparmor apparmor-parser which ];
 
   makeFlags = ''BUILDTAGS+=seccomp BUILDTAGS+=apparmor'';
 
-  preBuild = ''
+  buildPhase = ''
+    cd go/src/${goPackagePath}
     patchShebangs .
     substituteInPlace libcontainer/apparmor/apparmor.go \
       --replace /sbin/apparmor_parser ${apparmor-parser}/bin/apparmor_parser
+    make ${makeFlags} runc
   '';
 
   installPhase = ''
-    install -Dm755 runc $out/bin/runc
+    install -Dm755 runc $bin/bin/runc
 
     # Include contributed man pages
     man/md2man-all.sh -q
@@ -45,18 +49,11 @@ stdenv.mkDerivation rec {
     done
   '';
 
-  preFixup = ''
-    # remove references to go compiler
-    while read file; do
-      sed -ri "s,${go},$(echo "${go}" | sed "s,$NIX_STORE/[^-]*,$NIX_STORE/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,"),g" $file
-    done < <(find $out/bin -type f 2>/dev/null)
-  '';
-
   meta = {
     homepage = https://runc.io/;
     description = "A CLI tool for spawning and running containers according to the OCI specification";
     license = licenses.asl20;
-    maintainers = with maintainers; [ offline ];
+    maintainers = with maintainers; [ offline vdemeester ];
     platforms = platforms.linux;
   };
 }

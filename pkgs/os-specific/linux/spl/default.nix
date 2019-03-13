@@ -1,36 +1,29 @@
 { fetchFromGitHub, stdenv, autoreconfHook, coreutils, gawk
-, configFile ? "all"
-
+, fetchpatch
 # Kernel dependencies
-, kernel ? null
+, kernel
 }:
 
 with stdenv.lib;
-let
-  buildKernel = any (n: n == configFile) [ "kernel" "all" ];
-  buildUser = any (n: n == configFile) [ "user" "all" ];
-in
 
-assert any (n: n == configFile) [ "kernel" "user" "all" ];
-assert buildKernel -> kernel != null;
+assert kernel != null;
 
 stdenv.mkDerivation rec {
-  name = "spl-${configFile}-${version}${optionalString buildKernel "-${kernel.version}"}";
-
-  version = "0.6.5.8";
+  name = "spl-${version}-${kernel.version}";
+  version = "0.7.13";
 
   src = fetchFromGitHub {
     owner = "zfsonlinux";
     repo = "spl";
     rev = "spl-${version}";
-    sha256 = "000yvaccqlkrq15sdz0734fp3lkmx58182cdcfpm4869i0q7rf0s";
+    sha256 = "1rzqgiszy8ad2gx20577azp1y5jgad0907slfzl5y2zb05jgaipa";
   };
 
-  patches = [ ./const.patch ./install_prefix.patch ];
+  patches = [ ./install_prefix.patch ];
 
-  nativeBuildInputs = [ autoreconfHook ];
+  nativeBuildInputs = [ autoreconfHook ] ++ kernel.moduleBuildDependencies;
 
-  hardeningDisable = [ "pic" ];
+  hardeningDisable = [ "fortify" "stackprotector" "pic" ];
 
   preConfigure = ''
     substituteInPlace ./module/spl/spl-generic.c --replace /usr/bin/hostid hostid
@@ -40,8 +33,7 @@ stdenv.mkDerivation rec {
   '';
 
   configureFlags = [
-    "--with-config=${configFile}"
-  ] ++ optionals buildKernel [
+    "--with-config=kernel"
     "--with-linux=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source"
     "--with-linux-obj=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
   ];
@@ -59,6 +51,6 @@ stdenv.mkDerivation rec {
     homepage = http://zfsonlinux.org/;
     platforms = platforms.linux;
     license = licenses.gpl2Plus;
-    maintainers = with maintainers; [ jcumming wizeman wkennington fpletz ];
+    maintainers = with maintainers; [ jcumming wizeman fpletz globin ];
   };
 }

@@ -12,8 +12,6 @@ let
     apacheHttpd = httpd;
   };
 
-  pythonLib = p: "${p}/";
-
   httpd = serverInfo.serverConfig.package;
 
   versionPre24 = versionOlder httpd.version "2.4";
@@ -99,7 +97,7 @@ in
         makeSearchPathOutput "lib" "lib/${pkgs.python.libPrefix}/site-packages"
           [ pkgs.mod_python
             pkgs.pythonPackages.trac
-            pkgs.setuptools
+            pkgs.pythonPackages.setuptools
             pkgs.pythonPackages.genshi
             pkgs.pythonPackages.psycopg2
             subversion

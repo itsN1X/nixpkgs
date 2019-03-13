@@ -7,10 +7,6 @@ let
   nssModulesPath = config.system.nssModules.path;
   cfg = config.services.nscd;
 
-  inherit (lib) singleton;
-
-  cfgFile = pkgs.writeText "nscd.conf" cfg.config;
-
 in
 
 {
@@ -41,8 +37,9 @@ in
   ###### implementation
 
   config = mkIf cfg.enable {
+    environment.etc."nscd.conf".text = cfg.config;
 
-    users.extraUsers.nscd =
+    users.users.nscd =
       { isSystemUser = true;
         description = "Name service cache daemon user";
       };
@@ -61,10 +58,14 @@ in
             mkdir -m 0755 -p /var/db/nscd
           '';
 
-        restartTriggers = [ config.environment.etc.hosts.source config.environment.etc."nsswitch.conf".source ];
+        restartTriggers = [
+          config.environment.etc.hosts.source
+          config.environment.etc."nsswitch.conf".source
+          config.environment.etc."nscd.conf".source
+        ];
 
         serviceConfig =
-          { ExecStart = "@${pkgs.glibc.bin}/sbin/nscd nscd -f ${cfgFile}";
+          { ExecStart = "@${pkgs.glibc.bin}/sbin/nscd nscd";
             Type = "forking";
             PIDFile = "/run/nscd/nscd.pid";
             Restart = "always";
@@ -79,7 +80,7 @@ in
         # its pid. So wait until it's ready.
         postStart =
           ''
-            while ! ${pkgs.glibc.bin}/sbin/nscd -g -f ${cfgFile} > /dev/null; do
+            while ! ${pkgs.glibc.bin}/sbin/nscd -g > /dev/null; do
               sleep 0.2
             done
           '';

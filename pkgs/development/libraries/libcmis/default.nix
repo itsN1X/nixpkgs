@@ -11,8 +11,9 @@ stdenv.mkDerivation rec {
 
   patches = [ ./gcc5.patch ];
 
-  buildInputs = [ boost libxml2 pkgconfig curl autoreconfHook ];
-  configureFlags = "--without-man --with-boost=${boost.dev} --disable-werror --disable-tests";
+  nativeBuildInputs = [ autoreconfHook pkgconfig ];
+  buildInputs = [ boost libxml2 curl ];
+  configureFlags = [ "--without-man" "--with-boost=${boost.dev}" "--disable-werror" "--disable-tests" ];
 
   # Cppcheck cannot find all the include files (use --check-config for details)
   doCheck = false;
@@ -21,6 +22,6 @@ stdenv.mkDerivation rec {
     description = "C++ client library for the CMIS interface";
     homepage = https://sourceforge.net/projects/libcmis/;
     license = licenses.gpl2;
-    platforms = platforms.linux;
+    platforms = platforms.unix;
   };
 }
